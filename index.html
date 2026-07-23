@@ -8,140 +8,145 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-78VZWJ5B1W"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-78VZWJ5B1W');</script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7039091592734005" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh}
-  nav{background:#1e293b;border-bottom:1px solid #334155;padding:14px 24px;display:flex;align-items:center;gap:16px}
-  nav a{color:#94a3b8;text-decoration:none;font-size:14px}
-  nav a:hover{color:#f1f5f9}
-  nav .brand{color:#38bdf8;font-weight:700;font-size:18px}
-  .ad-banner{background:#1e293b;border-bottom:1px solid #334155;padding:8px;text-align:center}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh}
+nav{background:#1e293b;border-bottom:1px solid #334155;padding:14px 24px;display:flex;align-items:center;gap:16px}
+nav a{color:#94a3b8;text-decoration:none;font-size:14px}nav a:hover{color:#f1f5f9}
+nav .brand{color:#38bdf8;font-weight:700;font-size:18px}
+.ad-banner{background:#1e293b;border-bottom:1px solid #334155;padding:8px;text-align:center}
+#app{max-width:580px;margin:40px auto;padding:0 20px}
+h1{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px}
+.subtitle{text-align:center;color:#94a3b8;margin-bottom:32px}
+.card{background:#1e293b;border-radius:20px;padding:36px 24px;text-align:center;border:1px solid #334155;margin-bottom:20px}
+#display{font-family:monospace;font-size:72px;font-weight:300;letter-spacing:2px;color:#38bdf8;line-height:1;margin-bottom:28px}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{border:none;border-radius:12px;padding:14px 32px;font-size:17px;font-weight:700;cursor:pointer}
+.btn-start{background:#38bdf8;color:#0f172a}
+.btn-stop{background:#ef4444;color:#fff}
+.btn-resume{background:#22c55e;color:#fff}
+.btn-lap{background:#334155;color:#f1f5f9}
+.btn-reset{background:#1e293b;color:#94a3b8;border:1px solid #334155!important}
+.laps-card{background:#1e293b;border-radius:16px;border:1px solid #334155;overflow:hidden;display:none}
+.laps-header{padding:14px 20px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;font-size:13px;color:#64748b;font-weight:600}
+.lap-row{padding:13px 20px;border-bottom:1px solid #0f172a;display:flex;justify-content:space-between;font-family:monospace;font-size:15px}
+.lap-row.fastest{background:#052e16;color:#22c55e}
+.lap-row.slowest{background:#2d1515;color:#ef4444}
 </style>
 </head>
 <body>
-<nav>
-  <span class="brand">⚡ Tabutility</span>
-  <a href="https://tabutility.com">← All Tools</a>
-</nav>
-<div class="ad-banner">
-  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7039091592734005" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+<nav><span class="brand">⚡ Tabutility</span><a href="https://tabutility.com">← All Tools</a></nav>
+<div class="ad-banner"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7039091592734005" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script></div>
+<div id="app">
+  <h1>Online Stopwatch</h1>
+  <p class="subtitle">Lap timer · Colour-coded fastest &amp; slowest splits</p>
+  <div class="card">
+    <div id="display">00:00:00.00</div>
+    <div class="btns" id="btns"></div>
+  </div>
+  <div class="laps-card" id="laps-card">
+    <div class="laps-header"><span>LAP</span><span>SPLIT</span><span>TOTAL</span></div>
+    <div id="laps-list"></div>
+  </div>
 </div>
-<div id="root"></div>
-<script type="text/babel">
-//<![CDATA[
-const { useState, useEffect, useRef } = React;
+<script>
+var running = false;
+var elapsed = 0;
+var startTime = null;
+var rafId = null;
+var laps = [];
+
+var display = document.getElementById('display');
+var btnsEl = document.getElementById('btns');
+var lapsCard = document.getElementById('laps-card');
+var lapsList = document.getElementById('laps-list');
 
 function fmt(ms) {
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  const cs = Math.floor((ms % 1000) / 10);
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+  var h = Math.floor(ms/3600000);
+  var m = Math.floor((ms%3600000)/60000);
+  var s = Math.floor((ms%60000)/1000);
+  var cs = Math.floor((ms%1000)/10);
+  return pad2(h)+':'+pad2(m)+':'+pad2(s)+'.'+pad2(cs);
+}
+function fmtSplit(ms) {
+  var m = Math.floor(ms/60000);
+  var s = Math.floor((ms%60000)/1000);
+  var cs = Math.floor((ms%1000)/10);
+  return pad2(m)+':'+pad2(s)+'.'+pad2(cs);
+}
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function tick() {
+  elapsed = (performance.now() - startTime);
+  display.textContent = fmt(elapsed);
+  rafId = requestAnimationFrame(tick);
 }
 
-function fmtLap(ms) {
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  const cs = Math.floor((ms % 1000) / 10);
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+function start() {
+  startTime = performance.now() - elapsed;
+  running = true;
+  rafId = requestAnimationFrame(tick);
+  renderBtns();
+}
+function stop() {
+  running = false;
+  cancelAnimationFrame(rafId);
+  renderBtns();
+}
+function reset() {
+  running = false;
+  cancelAnimationFrame(rafId);
+  elapsed = 0;
+  laps = [];
+  display.textContent = '00:00:00.00';
+  lapsCard.style.display = 'none';
+  lapsList.innerHTML = '';
+  renderBtns();
+}
+function lap() {
+  var lapTotal = elapsed;
+  var lapSplit = elapsed - (laps.length ? laps[laps.length-1].total : 0);
+  laps.push({ num: laps.length+1, total: lapTotal, split: lapSplit });
+  renderLaps();
 }
 
-export default function Stopwatch() {
-  const [running, setRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [laps, setLaps] = useState([]);
-  const startRef = useRef(null);
-  const rafRef = useRef(null);
-  const baseRef = useRef(0);
-
-  useEffect(() => {
-    if (running) {
-      startRef.current = performance.now();
-      const tick = () => {
-        setElapsed(baseRef.current + (performance.now() - startRef.current));
-        rafRef.current = requestAnimationFrame(tick);
-      };
-      rafRef.current = requestAnimationFrame(tick);
-    } else {
-      cancelAnimationFrame(rafRef.current);
-      baseRef.current = elapsed;
-    }
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [running]);
-
-  const start = () => setRunning(true);
-  const stop = () => setRunning(false);
-  const reset = () => { setRunning(false); setElapsed(0); baseRef.current = 0; setLaps([]); };
-  const lap = () => {
-    const lapTime = elapsed - (laps.reduce((a,l) => a + l.split, 0));
-    setLaps(prev => [...prev, { total: elapsed, split: lapTime, num: prev.length + 1 }]);
-  };
-
-  const fastestSplit = laps.length > 1 ? Math.min(...laps.map(l => l.split)) : null;
-  const slowestSplit = laps.length > 1 ? Math.max(...laps.map(l => l.split)) : null;
-
-  return (
-    <div style={{maxWidth:600,margin:'40px auto',padding:'0 20px'}}>
-      <h1 style={{textAlign:'center',fontSize:28,fontWeight:700,marginBottom:8}}>Online Stopwatch</h1>
-      <p style={{textAlign:'center',color:'#94a3b8',marginBottom:40}}>Lap timer · Runs in your browser · No install needed</p>
-
-      <div style={{background:'#1e293b',borderRadius:20,padding:'40px 24px',textAlign:'center',border:'1px solid #334155',marginBottom:24}}>
-        <div style={{fontFamily:'monospace',fontSize:72,fontWeight:300,letterSpacing:2,color:'#38bdf8',lineHeight:1,marginBottom:32}}>
-          {fmt(elapsed)}
-        </div>
-        <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
-          {!running && elapsed === 0 && (
-            <button onClick={start} style={{background:'#38bdf8',color:'#0f172a',border:'none',borderRadius:12,padding:'14px 36px',fontSize:18,fontWeight:700,cursor:'pointer'}}>Start</button>
-          )}
-          {running && (
-            <>
-              <button onClick={stop} style={{background:'#ef4444',color:'#fff',border:'none',borderRadius:12,padding:'14px 36px',fontSize:18,fontWeight:700,cursor:'pointer'}}>Stop</button>
-              <button onClick={lap} style={{background:'#334155',color:'#f1f5f9',border:'none',borderRadius:12,padding:'14px 36px',fontSize:18,fontWeight:700,cursor:'pointer'}}>Lap</button>
-            </>
-          )}
-          {!running && elapsed > 0 && (
-            <>
-              <button onClick={start} style={{background:'#22c55e',color:'#fff',border:'none',borderRadius:12,padding:'14px 36px',fontSize:18,fontWeight:700,cursor:'pointer'}}>Resume</button>
-              <button onClick={lap} style={{background:'#334155',color:'#f1f5f9',border:'none',borderRadius:12,padding:'14px 36px',fontSize:18,fontWeight:700,cursor:'pointer'}}>Lap</button>
-              <button onClick={reset} style={{background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:12,padding:'14px 36px',fontSize:18,fontWeight:700,cursor:'pointer'}}>Reset</button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {laps.length > 0 && (
-        <div style={{background:'#1e293b',borderRadius:16,border:'1px solid #334155',overflow:'hidden'}}>
-          <div style={{padding:'16px 20px',borderBottom:'1px solid #334155',display:'flex',justifyContent:'space-between',fontSize:13,color:'#64748b',fontWeight:600}}>
-            <span>LAP</span><span>SPLIT</span><span>TOTAL</span>
-          </div>
-          {[...laps].reverse().map(l => {
-            const isFastest = fastestSplit !== null && l.split === fastestSplit;
-            const isSlowest = slowestSplit !== null && l.split === slowestSplit;
-            return (
-              <div key={l.num} style={{padding:'14px 20px',borderBottom:'1px solid #1e293b',display:'flex',justifyContent:'space-between',fontFamily:'monospace',fontSize:16,background: isFastest ? '#052e16' : isSlowest ? '#2d1515' : 'transparent', color: isFastest ? '#22c55e' : isSlowest ? '#ef4444' : '#f1f5f9'}}>
-                <span>#{String(l.num).padStart(2,'0')}</span>
-                <span>{fmtLap(l.split)}</span>
-                <span>{fmtLap(l.total)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div style={{background:'#1e293b',borderRadius:16,padding:20,marginTop:24,border:'1px solid #334155'}}>
-        <h2 style={{fontSize:16,fontWeight:600,marginBottom:8}}>About this stopwatch</h2>
-        <p style={{fontSize:14,color:'#94a3b8',lineHeight:1.6}}>Uses <code style={{background:'#0f172a',padding:'1px 4px',borderRadius:4}}>requestAnimationFrame</code> for smooth, accurate timing. Laps are colour-coded — green for fastest split, red for slowest. Works entirely in your browser with no server required.</p>
-      </div>
-    </div>
-  );
+function renderBtns() {
+  btnsEl.innerHTML = '';
+  if (!running && elapsed === 0) {
+    addBtn('Start', 'btn-start', start);
+  } else if (running) {
+    addBtn('Stop', 'btn-stop', stop);
+    addBtn('Lap', 'btn-lap', lap);
+  } else {
+    addBtn('Resume', 'btn-resume', start);
+    addBtn('Lap', 'btn-lap', lap);
+    addBtn('Reset', 'btn-reset', reset);
+  }
+}
+function addBtn(label, cls, fn) {
+  var b = document.createElement('button');
+  b.className = 'btn '+cls; b.textContent = label;
+  b.onclick = fn; btnsEl.appendChild(b);
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Stopwatch />);
-//]]>
+function renderLaps() {
+  lapsCard.style.display = 'block';
+  var splits = laps.map(function(l){ return l.split; });
+  var fastest = laps.length > 1 ? Math.min.apply(null,splits) : null;
+  var slowest = laps.length > 1 ? Math.max.apply(null,splits) : null;
+  lapsList.innerHTML = '';
+  var reversed = laps.slice().reverse();
+  reversed.forEach(function(l) {
+    var row = document.createElement('div');
+    row.className = 'lap-row';
+    if (fastest !== null && l.split === fastest) row.classList.add('fastest');
+    else if (slowest !== null && l.split === slowest) row.classList.add('slowest');
+    row.innerHTML = '<span>#'+pad2(l.num)+'</span><span>'+fmtSplit(l.split)+'</span><span>'+fmtSplit(l.total)+'</span>';
+    lapsList.appendChild(row);
+  });
+}
+
+renderBtns();
 </script>
 </body>
 </html>
