@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stopwatch.tabutility.com/sitemap.xml
